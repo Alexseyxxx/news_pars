@@ -1,15 +1,18 @@
-import uuid
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.core.mail import send_mail
-from django.conf import settings
-from .models import User, ActivationCode
+from .models import User
 
 @receiver(post_save, sender=User)
-def create_activation_code(sender, instance, created, **kwargs):
-    if created and not instance.is_active:
-        code = uuid.uuid4().hex
-        ActivationCode.objects.update_or_create(user=instance, defaults={"code": code})
-        subject = "Activation code"
-        message = f"Hello {instance.email}\nYour activation code: {code}"
-        send_mail(subject, message, settings.EMAIL_HOST_USER, [instance.email])
+def send_activation_email(sender, instance, created, **kwargs):
+    if created and not instance.is_superuser:
+      
+        instance.generate_activation_code()
+        instance.save(update_fields=['activation_code'])
+        
+        send_mail(
+            subject="Код активации",
+            message=f"Ваш код активации: {instance.activation_code}",
+            from_email="no-reply@example.com",
+            recipient_list=[instance.email],
+        )

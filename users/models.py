@@ -1,45 +1,78 @@
-from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.utils import timezone
+#до
+# import uuid
+# from datetime import timedelta
+# from django.db import models
+# from django.contrib.auth.models import AbstractUser, BaseUserManager
+# from django.utils import timezone
+
+
+# class UserManager(BaseUserManager):
+#     use_in_migrations = True
+
+#     def create_user(self, email, password=None, **extra_fields):
+#         if not email:
+#             raise ValueError("Email is required")
+#         email = self.normalize_email(email)
+
+#         # если username не передан, сгенерируем его автоматически
+#         if not extra_fields.get("username"):
+#             extra_fields["username"] = str(uuid.uuid4())[:30]
+
+#         user = self.model(email=email, **extra_fields)
+#         user.set_password(password)
+#         user.save(using=self._db)
+#         return user
+
+#     def create_superuser(self, email, password=None, **extra_fields):
+#         extra_fields.setdefault("is_staff", True)
+#         extra_fields.setdefault("is_superuser", True)
+
+#         if extra_fields.get("is_staff") is not True:
+#             raise ValueError("Superuser must have is_staff=True.")
+#         if extra_fields.get("is_superuser") is not True:
+#             raise ValueError("Superuser must have is_superuser=True.")
+
+#         return self.create_user(email, password, **extra_fields)
+
+
+# class User(AbstractUser):
+#     email = models.EmailField(unique=True)
+#     is_active = models.BooleanField(default=False)
+#     activation_code = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+#     expired_code = models.DateTimeField(null=True, blank=True)
+
+#     USERNAME_FIELD = "email"
+#     REQUIRED_FIELDS = []  # пусто, чтобы createsuperuser не требовал username
+
+#     objects = UserManager()  # подключаем кастомный менеджер
+
+#     def save(self, *args, **kwargs):
+#         if not self.pk:  
+#             self.is_active = False
+#             self.activation_code = uuid.uuid4()
+#             self.expired_code = timezone.now() + timedelta(minutes=3)
+#         super().save(*args, **kwargs)
+
+
 import uuid
+from datetime import timedelta
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 
-class UserManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
-        if not email:
-            raise ValueError("Email is required")
-        email = self.normalize_email(email)
-        user = self.model(email=email, is_active=False, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
 
-    def create_superuser(self, email, password=None, **extra_fields):
-        user = self.create_user(email=email, password=password, **extra_fields)
-        user.is_superuser = True
-        user.is_staff = True
-        user.is_active = True
-        user.save(using=self._db)
-        return user
-
-class User(AbstractBaseUser, PermissionsMixin):
+class User(AbstractUser):
     email = models.EmailField(unique=True)
-    first_name = models.CharField(max_length=30, blank=True)
     is_active = models.BooleanField(default=False)
-    is_staff = models.BooleanField(default=False)
-    date_joined = models.DateTimeField(default=timezone.now)
+    activation_code = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    expired_code = models.DateTimeField(null=True, blank=True)
 
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = [] 
 
-    objects = UserManager()
-
-    def __str__(self):
-        return self.email
-
-class ActivationCode(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="activation")
-    code = models.CharField(max_length=64, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.user.email} - {self.code}"
+    def save(self, *args, **kwargs):
+        if not self.pk:  
+            self.is_active = False
+            self.activation_code = uuid.uuid4()
+            self.expired_code = timezone.now() + timedelta(minutes=3)
+        super().save(*args, **kwargs)

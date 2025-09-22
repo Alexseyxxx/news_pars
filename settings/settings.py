@@ -33,12 +33,11 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
-    # third-party
     "rest_framework",
     "rest_framework_simplejwt",
     "drf_yasg",
 
-    # app
+  
     "users",   # приложение с кастомным юзером
     "news",    # приложение со статьями
 ]
@@ -124,3 +123,11 @@ REST_FRAMEWORK = {
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]  # если у тебя есть статические файлы
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
